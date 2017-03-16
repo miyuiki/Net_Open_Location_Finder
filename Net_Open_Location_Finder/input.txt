@@ -1,0 +1,41 @@
+ViaCost = Cv
+Spacing = S
+Boundary = (LLx,LLy) (URx,URy)
+#MetalLayers = W
+#RoutedShapes = X
+#RoutedVias = Y
+#Obstacles = Z
+RoutedShape Layer (LLx,LLy) (URx,URy)
+...
+RoutedVia Layer (x,y)
+...
+Obstacle Layer (LLx,LLy) (URx,URy)
+
+You can output H-line/V-line/via in any order. But be careful about IO handling in multi-thread environment.
+Output Format:
+H-line Layer (x1,y) (x2,y)
+...
+V-line Layer (x,y1) (x,y2)
+...
+Via Layer (x,y)
+
+Take Figure 1 for example, the input will be:
+
+ViaCost = 20
+Spacing = 5
+Boundary = (0,0) (1000,1000)
+#MetalLayers = 2
+#RoutedShapes = 7
+#RoutedVias = 1
+#Obstacles = 3
+RoutedShape M1 (50,100) (250,150)
+RoutedShape M1 (600,20) (750,140)
+RoutedShape M1 (50,850) (250,900)
+RoutedShape M1 (10,800) (500,995)
+RoutedShape M2 (75,20) (200,750)
+RoutedShape M2 (375,100) (575,600)
+RoutedShape M2 (475,20) (670,450)
+RoutedVia V1 (175,125)
+Obstacle M1 (350,300) (650,750)
+Obstacle M1 (50,350) (650,650)
+Obstacle M2 (350,700) (950,800)
