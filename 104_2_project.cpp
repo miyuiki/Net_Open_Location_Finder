@@ -4,7 +4,9 @@
 #include <sstream>
 #include <vector>
 #include <stdlib.h>
-
+#include <list>
+#include <queue>
+#include <iomanip>  
 using namespace std;
 
 char input_filename[] = "input.txt";
@@ -18,69 +20,126 @@ string buffer[1000];
 void string_replace(string & strBig, const string & strsrc, const string &strdst);
 class Shape{
 	public:
+		int layer;
+		int id;
 		int x1;
 		int y1;
 		int x2;
 		int y2;
 };
+class Graph{
+private:
+    int num_vertex;
+    vector< std::list<int> > AdjList;
+    int *color,             // 0:white, 1:gray, 2:black
+        *predecessor,
+        *discover,
+        *finish;
+public:
+	Graph():num_vertex(0){};
+    Graph(int N):num_vertex(N){
+        // initialize Adj List
+        AdjList.resize(num_vertex);
+    };
+    void AddEdgeList(int from, int to);
+    void DFS(int Start);
+    void DFSVisit(int vertex, int &time);
+    
+    void CCDFS(int vertex);                
+    void SetCollapsing(int vertex);
+    void PrintPredecessor();              
+};
+
+void Graph::DFS(int Start){
+    color = new int[num_vertex];           
+    discover = new int[num_vertex];
+    finish = new int[num_vertex];
+    predecessor = new int[num_vertex];
+
+    int time = 0;                          
+    for (int i = 0; i < num_vertex; i++) { 
+        color[i] = 0;
+        discover[i] = 0;
+        finish[i] = 0;
+        predecessor[i] = -1;
+    }
+
+    int i = Start;
+    for (int j = 0; j < num_vertex; j++) { 
+        if (color[i] == 0) {               
+            DFSVisit(i, time);
+        }
+        i = j;                             
+    }
+}
+
+void Graph::DFSVisit(int vertex, int &time){   
+    color[vertex] = 1;                        
+    discover[vertex] = ++time;                
+    for (std::list<int>::iterator itr = AdjList[vertex].begin();   
+         itr != AdjList[vertex].end(); itr++) {                    
+        if (color[*itr] == 0) {               
+            predecessor[*itr] = vertex;        
+            DFSVisit(*itr, time);             
+        }
+    }
+    color[vertex] = 2;                        
+    finish[vertex] = ++time;                 
+}
+
+void Graph::SetCollapsing(int current){
+    int root;  // root
+    for (root = current; predecessor[root] >= 0; root = predecessor[root]);
+
+    while (current != root) {
+        int parent = predecessor[current];
+        predecessor[current] = root;
+        current = parent;
+    }
+}
+
+void Graph::CCDFS(int vertex = 0){
+
+    DFS(vertex);      // 
+    PrintPredecessor();
+    for (int i = 0; i< num_vertex; i++){
+        SetCollapsing(i);
+    }
+    PrintPredecessor();
+
+    int num_cc = 0;
+    for (int i = 0; i < num_vertex; i++) {
+        if (predecessor[i] < 0 && i != 0) {
+            cout << "Component#" << ++num_cc << ": " << i << " ";
+            for (int j = 0; j < num_vertex; j++) {
+                if (predecessor[j] == i) {
+                    cout << j << " ";
+                }
+            }
+            cout << endl;
+        }
+    }
+}
+
+void Graph::PrintPredecessor(){
+    std::cout << "predecessor:" << std::endl;
+    for (int i = 0; i < num_vertex; i++)
+        std::cout << std::setw(4) << i;
+    std::cout << std::endl;
+    for (int i = 0; i < num_vertex; i++)
+        std::cout << std::setw(4) << predecessor[i];
+    std::cout << std::endl;
+}
+
+void Graph::AddEdgeList(int from, int to){
+    AdjList[from].push_back(to);
+}
+
 Shape M[100];
+vector<Shape> adjlist[100];
 void get_shape(int shape_cnt, string s);
 bool compare_shape(Shape a,Shape b);
-int main(int argc,char const *argv[])
-{
-	fstream fp;
-	fp.open(input_filename,ios::in);
-	if (fp.fail())
-	{
-		cout << "fail to open file" << endl;
-	}
-	else{
-		while(getline(fp,buffer[line_num],'\n')){
-			string_replace(buffer[line_num]," ","");
-			line_num++;
-		}
-		fp.close();
-	}
-	fp.open(nospacefilename,ios::out);
-	if (fp.fail())
-	{
-		cout << "fail to create file" << endl;	
-	}
-	else{
-		for (int i = 0; i < line_num; ++i){
-			if (buffer[i][0]=='#') continue;
-			else if(buffer[i]=="") continue;
-			else if(buffer[i]=="...") continue;
-			else
-				fp << buffer[i] << endl;
-		}
-		fp.close();
-	}
-	fp.open(nospacefilename,ios::in);
-	if(fp.fail()) cout << "fail to open file" << endl;
-	else{
-		while(getline(fp,line[cnt],'\n')){
-			if(line[cnt].substr(0,12) == "RoutedShapeM"){
-				get_shape(shape_cnt, line[cnt]);
-				shape_cnt++;
-			} 
-			cnt++;
-		}
-		for (int i = 0; i < shape_cnt; ++i)
-		{
-			cout << "shape" << i+1 << " x1 : " << M[i].x1 << endl;
-			cout << "shape" << i+1 << " y1 : " << M[i].y1 << endl;
-			cout << "shape" << i+1 << " x2 : " << M[i].x2 << endl;
-			cout << "shape" << i+1 << " y2 : " << M[i].y2 << endl;
-			cout << endl;
-		}
-		if(compare_shape(M[1],M[2]))
-			cout << "yes" <<endl;
-		else
-			cout << "no" << endl;
-	}
-	return 0;
-}
+void create_adj();
 void string_replace(string & strBig, const string & strsrc, const string &strdst)
 {
     string::size_type pos=0;
@@ -98,6 +157,7 @@ void get_shape(int shape_cnt, string s){
 	string token[10];
 	string token2[10];
 	stringstream ss(s); 
+
 	while(getline(ss,token[i],',')){
 		i++;
 	}
@@ -152,3 +212,86 @@ bool compare_shape(Shape a,Shape b){
 			return false;
 	}
 }
+void create_adj(){
+	
+	for(int i = 0; i < shape_cnt; i++){
+		adjlist[i].push_back(M[i]);
+	}
+	for(int i = 0; i < shape_cnt; i++){
+		for(int j = 0;j < shape_cnt ; j++){
+			if(compare_shape(M[i],M[j]) && M[i].id != M[j].id)
+				adjlist[i].push_back(M[j]);
+		}
+	}
+}
+int main(int argc,char const *argv[])
+{
+	fstream fp;
+	fp.open(input_filename,ios::in);
+	if (fp.fail())
+	{
+		cout << "fail to open file" << endl;
+	}
+	else{
+		while(getline(fp,buffer[line_num],'\n')){
+			string_replace(buffer[line_num]," ","");
+			line_num++;
+		}
+		fp.close();
+	}
+	fp.open(nospacefilename,ios::out);
+	if (fp.fail())
+	{
+		cout << "fail to create file" << endl;	
+	}
+	else{
+		for (int i = 0; i < line_num; ++i){
+			if (buffer[i][0]=='#') continue;
+			else if(buffer[i]=="") continue;
+			else if(buffer[i]=="...") continue;
+			else
+				fp << buffer[i] << endl;
+		}
+		fp.close();
+	}
+	fp.open(nospacefilename,ios::in);
+	if(fp.fail()) cout << "fail to open file" << endl;
+	else{
+		while(getline(fp,line[cnt],'\n')){
+			if(line[cnt].substr(0,12) == "RoutedShapeM"){
+				get_shape(shape_cnt, line[cnt]);
+				M[shape_cnt].layer = int(line[cnt].at(12))-48;
+				M[shape_cnt].id = shape_cnt+1;
+				shape_cnt++;
+			} 
+			cnt++;
+		}
+		for (int i = 0; i < shape_cnt; ++i)
+		{
+			cout << "shape" << i+1 << " ID : : " << M[i].id << endl;
+			cout << "shape" << i+1 << " Layer : " << M[i].layer << endl;
+			cout << "shape" << i+1 << " x1 : " << M[i].x1 << endl;
+			cout << "shape" << i+1 << " y1 : " << M[i].y1 << endl;
+			cout << "shape" << i+1 << " x2 : " << M[i].x2 << endl;
+			cout << "shape" << i+1 << " y2 : " << M[i].y2 << endl;
+			cout << endl;
+		}
+		create_adj();
+		for(int i = 0;i < shape_cnt; i++){
+			for(int j = 0; j < adjlist[i].size(); j++)
+				cout << adjlist[i].at(j).id <<" ";
+			cout << endl;
+		}
+		Graph obj(shape_cnt+1);   
+		for(int i = 1; i < shape_cnt+1;i++){
+			for(int j = 0; j < adjlist[i-1].size();j++){
+				if(adjlist[i-1].at(j).id != i)
+					obj.AddEdgeList(i,adjlist[i-1].at(j).id);
+			}
+		}   	
+		obj.CCDFS();
+		cout << endl;
+	}
+	return 0;
+}
+
