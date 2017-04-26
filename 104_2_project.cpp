@@ -59,7 +59,7 @@ string line[1000];
 string buffer[1000];
 Shape M[100];
 vector<Shape> adjlist[100];
-vector<int> shape_vec[100];
+vector<Shape> shape_vec[100];
 void get_shape(int shape_cnt, string s);
 bool compare_shape(Shape a,Shape b);
 void create_adj();
@@ -128,14 +128,13 @@ void Graph::CCDFS(int vertex = 0){
         if (predecessor[i] < 0 && i != 0) {
             cout << "Component#" << ++num_cc << ": " << i << " ";
             
-            shape_vec[num_cc-1].push_back(i);
+            shape_vec[num_cc-1].push_back(M[i-1]);
             
-       
             for (int j = 0; j < num_vertex; j++) {
                 if (predecessor[j] == i && j != 0) {
                     cout << j << " ";
                     component_num = num_cc;
-                    shape_vec[num_cc-1].push_back(j);
+                    shape_vec[num_cc-1].push_back(M[j-1]);
                 }
             }
             cout << endl;
@@ -316,7 +315,7 @@ int main(int argc,char const *argv[])
 		for (int i = 0; i < component_num; i++)
 		{
 			for (int j = 0; j < shape_vec[i].size(); j++){
-				cout << shape_vec[i].at(j) << " "  ;
+				cout << shape_vec[i].at(j).id << " "  ;
 			}
 			cout << endl;
 		}
