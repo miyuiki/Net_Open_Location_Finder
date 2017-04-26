@@ -9,15 +9,6 @@
 #include <iomanip>  
 using namespace std;
 
-char input_filename[] = "input.txt";
-char output_filename[] = "output.txt";
-char nospacefilename[] = "nospace.txt";
-int line_num = 0;
-int cnt = 0;
-int shape_cnt = 0;
-string line[1000];
-string buffer[1000];
-void string_replace(string & strBig, const string & strsrc, const string &strdst);
 class Shape{
 	public:
 		int layer;
@@ -27,10 +18,17 @@ class Shape{
 		int x2;
 		int y2;
 };
+/*class Component{
+	private:
+		vector<Shape> shape_vec[100];
+	public:
+		void addShape(Shape s,vector<Shape> v);
+};*/
+
 class Graph{
 private:
     int num_vertex;
-    vector< std::list<int> > AdjList;
+    vector< list<int> > AdjList;
     int *color,             // 0:white, 1:gray, 2:black
         *predecessor,
         *discover,
@@ -49,6 +47,23 @@ public:
     void SetCollapsing(int vertex);
     void PrintPredecessor();              
 };
+
+char input_filename[] = "input.txt";
+char output_filename[] = "output.txt";
+char nospacefilename[] = "nospace.txt";
+int line_num = 0;
+int cnt = 0;
+int shape_cnt = 0;
+int component_num = 0; 
+string line[1000];
+string buffer[1000];
+Shape M[100];
+vector<Shape> adjlist[100];
+vector<int> shape_vec[100];
+void get_shape(int shape_cnt, string s);
+bool compare_shape(Shape a,Shape b);
+void create_adj();
+void string_replace(string & strBig, const string & strsrc, const string &strdst);
 
 void Graph::DFS(int Start){
     color = new int[num_vertex];           
@@ -109,11 +124,18 @@ void Graph::CCDFS(int vertex = 0){
 
     int num_cc = 0;
     for (int i = 0; i < num_vertex; i++) {
+    	
         if (predecessor[i] < 0 && i != 0) {
             cout << "Component#" << ++num_cc << ": " << i << " ";
+            
+            shape_vec[num_cc-1].push_back(i);
+            
+       
             for (int j = 0; j < num_vertex; j++) {
-                if (predecessor[j] == i) {
+                if (predecessor[j] == i && j != 0) {
                     cout << j << " ";
+                    component_num = num_cc;
+                    shape_vec[num_cc-1].push_back(j);
                 }
             }
             cout << endl;
@@ -122,24 +144,23 @@ void Graph::CCDFS(int vertex = 0){
 }
 
 void Graph::PrintPredecessor(){
-    std::cout << "predecessor:" << std::endl;
+    cout << "predecessor:" << endl;
     for (int i = 0; i < num_vertex; i++)
-        std::cout << std::setw(4) << i;
-    std::cout << std::endl;
+        cout << setw(4) << i;
+    cout << std::endl;
     for (int i = 0; i < num_vertex; i++)
-        std::cout << std::setw(4) << predecessor[i];
-    std::cout << std::endl;
+        cout << setw(4) << predecessor[i];
+    cout << endl;
 }
 
 void Graph::AddEdgeList(int from, int to){
     AdjList[from].push_back(to);
 }
 
-Shape M[100];
-vector<Shape> adjlist[100];
-void get_shape(int shape_cnt, string s);
-bool compare_shape(Shape a,Shape b);
-void create_adj();
+/*void Component::addShape(Shape s,vector<Shape> v){
+	v.push_back(s);
+}*/
+
 void string_replace(string & strBig, const string & strsrc, const string &strdst)
 {
     string::size_type pos=0;
@@ -178,7 +199,7 @@ void get_shape(int shape_cnt, string s){
 			M[shape_cnt].x2 = atoi(token2[1].c_str());
 		}
 		else{
-			M[shape_cnt].y2 = atoi(token2[0].substr(0,token2[0].size()-2).c_str());
+			M[shape_cnt].y2 = atoi(token2[0].substr(0,token2[0].size()-1).c_str());
 		}
 	}
 }
@@ -277,6 +298,7 @@ int main(int argc,char const *argv[])
 			cout << endl;
 		}
 		create_adj();
+		cout << "AdjList" << endl;
 		for(int i = 0;i < shape_cnt; i++){
 			for(int j = 0; j < adjlist[i].size(); j++)
 				cout << adjlist[i].at(j).id <<" ";
@@ -291,6 +313,16 @@ int main(int argc,char const *argv[])
 		}   	
 		obj.CCDFS();
 		cout << endl;
+		for (int i = 0; i < component_num; i++)
+		{
+			for (int j = 0; j < shape_vec[i].size(); j++){
+				cout << shape_vec[i].at(j) << " "  ;
+			}
+			cout << endl;
+		}
+		cout << "component_num " << component_num << endl;
+		
+		
 	}
 	return 0;
 }
