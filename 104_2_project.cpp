@@ -18,12 +18,6 @@ class Shape{
 		int x2;
 		int y2;
 };
-/*class Component{
-	private:
-		vector<Shape> shape_vec[100];
-	public:
-		void addShape(Shape s,vector<Shape> v);
-};*/
 
 class Graph{
 private:
@@ -55,12 +49,16 @@ int line_num = 0;
 int cnt = 0;
 int shape_cnt = 0;
 int component_num = 0; 
+int distant = 0;
 string line[1000];
 string buffer[1000];
 Shape M[100];
 vector<Shape> adjlist[100];
-vector<Shape> shape_vec[100];
+vector<Shape> component[100];
+
 void get_shape(int shape_cnt, string s);
+void get_distant(vector<Shape> v1, vector<Shape> v2); // 算距離
+void position(Shape s1, Shape s2);// 算位置並得到距離
 bool compare_shape(Shape a,Shape b);
 void create_adj();
 void string_replace(string & strBig, const string & strsrc, const string &strdst);
@@ -128,13 +126,13 @@ void Graph::CCDFS(int vertex = 0){
         if (predecessor[i] < 0 && i != 0) {
             cout << "Component#" << ++num_cc << ": " << i << " ";
             
-            shape_vec[num_cc-1].push_back(M[i-1]);
+            component[num_cc-1].push_back(M[i-1]);
             
             for (int j = 0; j < num_vertex; j++) {
                 if (predecessor[j] == i && j != 0) {
                     cout << j << " ";
                     component_num = num_cc;
-                    shape_vec[num_cc-1].push_back(M[j-1]);
+                    component[num_cc-1].push_back(M[j-1]);
                 }
             }
             cout << endl;
@@ -156,9 +154,6 @@ void Graph::AddEdgeList(int from, int to){
     AdjList[from].push_back(to);
 }
 
-/*void Component::addShape(Shape s,vector<Shape> v){
-	v.push_back(s);
-}*/
 
 void string_replace(string & strBig, const string & strsrc, const string &strdst)
 {
@@ -244,6 +239,15 @@ void create_adj(){
 		}
 	}
 }
+void get_distant(vector<Shape> v1, vector<Shape> v2){
+	for (int i = 0; i < v1.size(); i++)
+	{
+		for (int j = 0; j < v2.size(); j++)
+		{
+			position(v1.at(i), v2.at(j));
+		}
+	}
+}
 int main(int argc,char const *argv[])
 {
 	fstream fp;
@@ -314,14 +318,21 @@ int main(int argc,char const *argv[])
 		cout << endl;
 		for (int i = 0; i < component_num; i++)
 		{
-			for (int j = 0; j < shape_vec[i].size(); j++){
-				cout << shape_vec[i].at(j).id << " "  ;
+			for (int j = 0; j < component[i].size(); j++){
+				cout << component[i].at(j).id << " "  ;
 			}
 			cout << endl;
 		}
-		cout << "component_num " << component_num << endl;
-		
-		
+		for (int i = 0; i < component_num; i++)
+		{
+			for (int j = 0; j < component_num; j++)
+			{
+				if (i != j)
+				{
+					get_distant(component[i],component[j]);
+				}
+			}
+		}
 	}
 	return 0;
 }
